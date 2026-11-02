@@ -1,0 +1,7 @@
+# AUWTC line-ending policy: store all text with LF; check out with LF.
+# Every file type here (C#/XAML/XML/Markdown) is line-ending-insensitive, so this
+# makes behavior repo-local (independent of each cloner's core.autocrlf) and keeps
+# the Windows working tree byte-identical to the repo (no churn, no add warnings).
+# If a file type that truly needs CRLF is ever added (e.g. *.bat), give it its own
+# line here: "*.bat text eol=crlf"
+* text=auto eol=lf

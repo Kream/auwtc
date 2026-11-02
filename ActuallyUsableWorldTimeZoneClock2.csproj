@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>WorldTimeZoneClock</AssemblyName>
+    <RootNamespace>ActuallyUsableWorldTimeClock2</RootNamespace>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Version protocol: patch digit = build number. Bump ONLY when source
+         changed; incremental no-op builds keep the version (so a stale exe
+         is instantly detectable: binary version < current source version). -->
+    <VersionPrefix>0.0.8</VersionPrefix>
+    <FileVersion>0.0.8</FileVersion>
+    <InformationalVersion>0.0.8-build8-tpm-workarea</InformationalVersion>
+  </PropertyGroup>
+
+  <!-- Stamp the OutDir with a build-info.txt we can read as text to verify
+       which binary is actually deployed (mtime tracking is unreliable here). -->
+  <Target Name="StampBuildInfo" AfterTargets="Build"
+          Condition="'$(IsCrossTargetingBuild)' != 'true'">
+    <WriteLinesToFile
+        File="$(OutDir)build-info.txt"
+        Lines="version=$(InformationalVersion);built=$([System.DateTime]::UtcNow.ToString('o')) config=$(Configuration) rid=$(RuntimeIdentifier)"
+        Overwrite="true" />
+  </Target>
+
+</Project>

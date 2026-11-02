@@ -1,0 +1,6 @@
+# Build output
+bin/
+obj/
+
+# Logs (build.log, publish.log, crash.log)
+*.log
