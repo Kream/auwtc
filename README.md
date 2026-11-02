@@ -44,5 +44,8 @@ dotnet build -c Debug -r win-x64
 - Tray icon registration failure → MessageBox, then exit.
 
 ## License / status
-Personal project. See `auwtc-design_document_v3.md` for the full design record
+GPL-3.0-only. Full license text is in `LICENSE`, verbatim from
+<https://www.gnu.org/licenses/gpl-3.0.txt> (SPDX identifier: `GPL-3.0-only`).
+
+Personal project. See `auwtc-design_document*.md` for the full design record
 (§9 positioning, §12 fallbacks, §13 city-list notes).

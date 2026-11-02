@@ -1,8 +1,8 @@
 # Design Document: World Time Zone Clock (System Tray)
 
-> **Version:** 3.0
-> **Supersedes:** `auwtc-design_document_v2.md`
-> **What changed in this revision:** see Appendix A (Change Log) at the end of this document.
+> **Version:** 4.0
+> **Supersedes:** `auwtc-design_document_v3_1.md`
+> **What changed in this revision:** see Appendix A (Change Log) at the end of this document. The full revision history (v2 → v3 → v3.1) is preserved in Appendix A and in the git history of this repository.
 
 ## 1. Overview
 
@@ -107,7 +107,7 @@ The app is split into three loosely coupled layers:
   - Row 1: `LAX` + time
   - Row 2: `JFK` + time
   - Row 3: `LHR` + time
-- **Text:** City name left-aligned, time right-aligned, in a 12 pt font. Consolas 12 pt (monospaced) is recommended for clean column alignment; Segoe UI 12 pt is acceptable if the `Grid` columns use fixed widths.
+- **Text:** City name left-aligned, time right-aligned, in a 12 pt font (WPF `FontSize` is in device-independent pixels, so 12 pt = `FontSize 16`). Consolas 12 pt (monospaced) is recommended for clean column alignment; Segoe UI 12 pt is acceptable if the `Grid` columns use fixed widths.
 - **No border, no title bar, no close button.**
 - **Positioning:** Anchored above the tray icon — the popup's bottom edge is 8 pixels above the icon's top edge, horizontally centered on the icon, and clamped to the working area of the icon's monitor so it never overflows a screen edge (exact formulas in §9).
 
@@ -120,7 +120,7 @@ The app is split into three loosely coupled layers:
 
 - Use `Shell_NotifyIcon` (P/Invoke) from a hidden helper window.
 - **Icon rectangle:** `Shell_NotifyIconGetRect` returns the icon's screen rectangle.
-- **Anchor:** The popup is placed relative to that rectangle (see 7.2).
+- **Anchor:** The popup is placed relative to that rectangle (see §7.2).
 - **Icon lifecycle:** The icon is created on startup and destroyed when the app exits.
 
 ## 9. Positioning & Layout
@@ -177,7 +177,7 @@ The app is split into three loosely coupled layers:
 
 - **More cities:** Add a `City` entry (name, IANA ID, order); rows render automatically if the popup uses an `ItemsControl` bound to the `CityTimeRow` collection.
 - **Richer rows:** Extend `CityTimeRow` (e.g., date, day/night indicator, seconds) without changing the rendering pipeline.
-- **Live updates:** A `DispatcherTimer` could re-call `Refresh()` while the popup is open (out of scope for v3).
+- **Live updates:** A `DispatcherTimer` could re-call `Refresh()` while the popup is open (out of scope).
 - **Custom icon/skin:** Replace the built-in `SystemIcons.Application` bitmap with an embedded resource.
 - **Persistence:** None needed; city list is currently hard-coded in the data layer.
 
@@ -189,7 +189,29 @@ The app is split into three loosely coupled layers:
 - **P/Invoke:** Platform Invocation Services for calling native Windows APIs (e.g., `Shell_NotifyIcon`, `Shell_NotifyIconGetRect`).
 - **WS_EX_NOACTIVATE:** Extended window style that prevents a window from receiving keyboard focus when clicked/shown.
 
-## Appendix A — Change Log (v2 → v3)
+## 15. Build ID Incrementation
+
+Every new build increments the build ID by exactly one. The build ID is the patch digit of `VersionPrefix`/`FileVersion` in `ActuallyUsableWorldTimeZoneClock2.csproj` (e.g., `0.0.8` = build #8), echoed in the `InformationalVersion` build tag (e.g., `0.0.8-build8-tpm-workarea`). This section operationalizes the per-build versioning protocol recorded in Appendix B6.
+
+### 15.1 When the build ID increments
+
+- **Source change → bump.** Any change to compiled sources (`.cs`, `.xaml`, or build-affecting `.csproj` properties) produces a new build and must increment the build ID.
+- **Docs-only → no bump.** Changes that do not touch the binary (this design document, README, LICENSE) do not increment the build ID — creating or revising this document is itself a docs-only change.
+- **One bump per build.** Multiple source edits folded into a single build session share one build ID.
+
+### 15.2 How an LLM increments the build ID
+
+An LLM asked to create a new build must treat the increment as a deliberate, verified procedure — never from memory:
+
+1. **Ground the current number.** Read `ActuallyUsableWorldTimeZoneClock2.csproj` from disk and note the existing `VersionPrefix`, `FileVersion`, and `InformationalVersion`. Cross-check the build number against the last generated `build-info.txt` (next to the exe) and the highest `B<n>` row in Appendix B. If the sources disagree, stop and reconcile before editing anything.
+2. **Compute the next ID.** New build number = current patch digit + 1. The major and minor components never move unless explicitly instructed.
+3. **Edit the `.csproj`.** Set `VersionPrefix` and `FileVersion` to `0.0.<N+1>`, and set `InformationalVersion` to `0.0.<N+1>-build<N+1>-<slug>`, where `<slug>` is a new, short, lowercase kebab-case label for this build's change (e.g., build 9 of a menu-ladder change → `0.0.9-build9-menu-ladder`). Never reuse a slug from an earlier build.
+4. **Re-read before building.** Open the edited `.csproj` again and confirm all three properties agree on the new number (no stale digit, no typo'd slug).
+5. **Build and check the receipt.** Run the publish command (§5); the `StampBuildInfo` target writes `build-info.txt` next to the exe. Its `version=` line must read `0.0.<N+1>-build<N+1>-<slug>`. Any mismatch is a failed increment: fix and rebuild. Never hand-edit `build-info.txt` — it is generated output, not configuration.
+6. **Record the build.** Add an Appendix B row (`B<n+1>`) for the build; if documented behavior changed, update the affected design sections in the same revision.
+7. **Never decrement, reuse, or skip.** Build IDs are monotonic. An aborted or failed build does not give its number back — record it in Appendix B and let the next real build take the following number.
+
+## Appendix A — Change Log (v2 → v4)
 
 | # | Section | Change | Reason |
 |---|---------|--------|--------|
@@ -204,6 +226,9 @@ The app is split into three loosely coupled layers:
 | 9 | §14 | Glossary updated for .NET 6+ IANA support; added `WS_EX_NOACTIVATE` entry | Consistency with §6.3/§11 |
 | 10 | §9 | Clamping rules made concrete with exact formulas; multi-monitor rule spelled out | Removes ambiguity for implementation |
 | 11 | §8 | Documented `Shell_NotifyIconGetRect` as the source of the icon rectangle and icon lifecycle (create on startup, destroy on exit) | Implementation-relevant detail |
+| 12 | New §15 | Added "Build ID Incrementation": when a build ID increments (source change → bump, docs-only → no bump, one bump per build) and a step-by-step procedure an LLM must follow to increment it | The rule previously lived only as a one-line record in Appendix B6; it is now explicit, followable specification |
+| 13 | Header / App. A | Version 3.0 → 3.1; Supersedes → `auwtc-design_document_v3.md`; this change log extended | Document revision discipline; docs-only revision, so the build ID stays at #8 (per §15.1) |
+| 14 | Header / §7.2 / §8 / §13 / App. B | Version 3.1 → 4.0; Supersedes → `auwtc-design_document_v3_1.md`; cleaned edition: stripped obsolete/self-referential text — removed the `<!-- APPEND-POINT -->` marker and reworded the Appendix B append rule (future entries append at the bottom of the table), dropped the "for v3" qualifier in §13, added the WPF DIP rendering of "12 pt" (`FontSize 16`, matching `MainWindow.xaml`), and added the missing `§` sigils in the §7.2/§8 cross-references; the header now points to git history for superseded revisions | Extraneous, inaccurate, and obsolete content removed; normative specification unchanged; docs-only revision, so the build ID stays at #8 (per §15.1) |
 
 > Note: §5 names example IDEs only; the design is IDE-agnostic. Use whichever toolchain the team standardizes on.
 
@@ -211,7 +236,7 @@ The app is split into three loosely coupled layers:
 
 > Deliberate deltas and fixes made during construction against v3.0. The design
 > sections above remain the specification; where reality forced a change, it is
-> recorded here. Future entries go above the `<!-- APPEND-POINT -->` marker.
+> recorded here. Future entries are appended at the bottom of this table.
 
 | # | Area | Record |
 |---|------|--------|
@@ -222,5 +247,3 @@ The app is split into three loosely coupled layers:
 | B5 | Context menu under taskbar | With a right-edge vertical taskbar the Exit menu rendered UNDER the taskbar. Z-band fixes (owner lifted to `HWND_TOPMOST`, foreground juggling) all failed — structural cause: `TrackPopupMenu`'s default work-area restriction applies only when the cursor is inside the work area, and a taskbar cursor is outside it; no horizontal alignment flag existed either. Fix (build #8): `TPM_WORKAREA` added to uFlags → menu clamped inside the work area. **Validated user-side (T1 pass).** `TPM_RIGHTALIGN` (0x0008) pre-staged in `TrayInterop` for a right-anchored variant if ever needed. |
 | B6 | Versioning | Per-build protocol: patch digit of `VersionPrefix` = build number, bumped only on source change; `InformationalVersion` carries a build tag (e.g. `0.0.8-build8-tpm-workarea`); `StampBuildInfo` target writes `build-info.txt` (version / built-UTC / config / rid) next to the exe after every build — machine-readable proof of what is compiled. |
 | B7 | Build #8 validation | Green compile (0W/0E, 4.59 s), dll 24,576 B; smoke round 3: T1 (Exit menu above right-edge taskbar + outside-click dismiss) PASS, T2 (Esc close → immediate re-open not eaten by the 300 ms grace) PASS — first Esc exercise. Menu ladder steps 2–3 not needed. |
-
-<!-- APPEND-POINT -->
