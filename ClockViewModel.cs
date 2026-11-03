@@ -23,9 +23,7 @@ public sealed class ClockViewModel
 
   /// <summary>
   /// clock is optional and passes through to CityTimeProvider: omitted/null =
-  /// the real clock (§6.1), so the App wiring is unchanged. An injected clock
-  /// delegate is consulted once per row inside Refresh(), which makes the
-  /// per-city snapshot race deterministically testable (App. B B8).
+  /// the real clock (§6.1), so the App wiring is unchanged.
   /// </summary>
   public ClockViewModel(Func<DateTimeOffset>? clock = null)
   {
@@ -33,13 +31,19 @@ public sealed class ClockViewModel
   }
 
   /// <summary>
-  /// Recomputes all rows from the current time. Call once per popup open;
-  /// the popup does not live-refresh while open.
+  /// Recomputes all rows from a single snapshot instant (§10.3): one clock
+  /// read captured at the moment of the tray click, then every city converted
+  /// from that SAME instant — the rows are mutually consistent by construction
+  /// and can never straddle a minute boundary (App. B B10). The snapshot is
+  /// not live: each subsequent open takes a fresh snapshot.
   /// </summary>
   public void Refresh()
   {
-    Rows.Clear();
-    foreach (City city in Cities)
-      Rows.Add(new CityTimeRow(city, _provider.GetLocalTime(city)));
+    DateTimeOffset instant = _provider.Now; // the one clock read per open
+    IReadOnlyList<CityTimeRow> snapshot = _provider.GetLocalTimes(Cities, instant);
+
+    Rows.Clear(); // computed first — no transient empty/partial window
+    foreach (CityTimeRow row in snapshot)
+      Rows.Add(row);
   }
 }

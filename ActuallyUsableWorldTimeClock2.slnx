@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="ActuallyUsableWorldTimeZoneClock2.csproj" />
+  <Project Path="tests/WorldTimeZoneClock.Tests/WorldTimeZoneClock.Tests.csproj" />
 </Solution>

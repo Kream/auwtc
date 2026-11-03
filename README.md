@@ -5,7 +5,7 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
 
 - **Runtime:** .NET 8, WPF, `net8.0-windows` (win-x64)
 - **Assembly:** `WorldTimeZoneClock`
-- **Version:** 0.0.9-build9-injectable-clock (patch digit = build number; bump only on source change)
+- **Version:** 0.0.11-build11-test-glob-exclusion (patch digit = build number; bump only on source change)
 
 ## Features
 - Tray icon (shell `NOTIFYICON_VERSION_3`) with left-click toggle popup showing
@@ -18,9 +18,17 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
   right-edge vertical taskbar).
 - Single instance (named mutex `Local\WorldTimeZoneClock`; second launch exits silently).
 - DPI-aware positioning (`HwndSource...TransformFromDevice` with `?? Matrix.Identity` guard).
-- Injectable clock (build #9): `CityTimeProvider` / `ClockViewModel` accept an optional
-  `Func<DateTimeOffset>` (default `DateTimeOffset.Now`), so tests can drive the per-city
-  snapshot reads deterministically — the minute-boundary race is controllable, not removed.
+- Single-instant snapshot (build #10): `Refresh()` captures ONE instant (the injectable clock's
+  single read per open, `CityTimeProvider.Now`) and converts every city from it
+  (`GetLocalTimes(cities, instant)` → `ConvertTime(DateTimeOffset, tz)`) — the rows can never
+  straddle a minute boundary. The clock is injectable (`Func<DateTimeOffset>`, default
+  `DateTimeOffset.Now`), so tests drive the snapshot deterministically.
+- Tests: `tests/WorldTimeZoneClock.Tests` (xUnit) — probe-clock (exactly-one-read per open),
+  `:59.999`/`:00.001` boundary pins, fresh-snapshot-per-open, DST edges, `--:--` degradation.
+  Run `dotnet test tests\WorldTimeZoneClock.Tests\WorldTimeZoneClock.Tests.csproj` (scope the
+  test project directly — the `.slnx` format needs a .NET 9 SDK). The main `.csproj` excludes
+  `tests/**` from its default globs (`DefaultItemExcludes`) so the app never compiles the
+  test sources (App. B B11).
 - Crash logging: `DispatcherUnhandledException` + `AppDomain.UnhandledException` append
   full stacks to `crash.log` next to the exe (fallback `%TEMP%\WorldTimeZoneClock.crash.log`).
 - Per-build stamp: `build-info.txt` written next to the exe on every build

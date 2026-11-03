@@ -2,5 +2,8 @@
 bin/
 obj/
 
+# Test output
+TestResults/
+
 # Logs (build.log, publish.log, crash.log)
 *.log

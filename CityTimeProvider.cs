@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace ActuallyUsableWorldTimeClock2;
 
-/// <summary>Computes the current time for a city (design doc §6.1).</summary>
+/// <summary>Converts one snapshot instant into per-city wall-clock times (design doc §6.1).</summary>
 public sealed class CityTimeProvider
 {
   /// <summary>Default clock: the real system time with the local offset (§11).</summary>
@@ -12,9 +12,9 @@ public sealed class CityTimeProvider
 
   /// <summary>
   /// clock is optional: null/omitted = the real clock, so production wiring
-  /// is unchanged. An injected clock is read once per GetLocalTime call, which
-  /// makes every per-city snapshot read — and any minute-boundary straddle
-  /// across the three rows — deterministically drivable in tests (App. B B8).
+  /// is unchanged. The clock is only ever read through Now — once per
+  /// snapshot (§10.3): a read per city could straddle a minute boundary and
+  /// display mutually inconsistent rows (App. B B10).
   /// </summary>
   public CityTimeProvider(Func<DateTimeOffset>? clock = null)
   {
@@ -22,19 +22,25 @@ public sealed class CityTimeProvider
   }
 
   /// <summary>
-  /// Returns the city's current local time formatted as 24-hour "HH:mm".
-  /// Uses IANA zone IDs with TimeZoneInfo, which handles DST automatically.
+  /// One clock read: the snapshot instant. Refresh() captures this once per
+  /// popup open and converts every city from that single instant (§10.3).
   /// </summary>
-  public string GetLocalTime(City city)
+  public DateTimeOffset Now => _clock();
+
+  /// <summary>
+  /// Returns the city's wall-clock time at the given instant, formatted as
+  /// 24-hour "HH:mm". The DateTimeOffset overload of ConvertTime converts
+  /// the instant (via its embedded offset) to the zone's wall clock — DST
+  /// handled automatically, no gap/ambiguity issues (§11/§14).
+  /// </summary>
+  public string GetLocalTime(City city, DateTimeOffset instant)
   {
     // §12: an unknown/invalid zone id degrades to "--:--" so the popup
     // still shows all three rows.
     try
     {
       TimeZoneInfo zone = TimeZoneInfo.FindSystemTimeZoneById(city.TimeZoneId);
-      // DateTimeOffset overload: converts the reading's instant (via its
-      // offset) to the zone's wall clock — DST handling as before.
-      DateTimeOffset cityNow = TimeZoneInfo.ConvertTime(_clock(), zone);
+      DateTimeOffset cityNow = TimeZoneInfo.ConvertTime(instant, zone);
       return cityNow.ToString("HH:mm", CultureInfo.InvariantCulture);
     }
     catch (TimeZoneNotFoundException)
@@ -45,5 +51,17 @@ public sealed class CityTimeProvider
     {
       return "--:--";
     }
+  }
+
+  /// <summary>
+  /// Converts every city from ONE shared instant, preserving city order
+  /// (§10.1: LAX → JFK → LHR). A bad zone degrades only its own row (§12).
+  /// </summary>
+  public IReadOnlyList<CityTimeRow> GetLocalTimes(IEnumerable<City> cities, DateTimeOffset instant)
+  {
+    List<CityTimeRow> rows = new();
+    foreach (City city in cities)
+      rows.Add(new CityTimeRow(city, GetLocalTime(city, instant)));
+    return rows;
   }
 }

@@ -11,12 +11,23 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
+    <!-- This project's directory IS the repository root, so the SDK's default
+         **/*.cs (and resource) globs would otherwise sweep the nested test
+         project's sources into the APP and die on its xUnit references
+         (CS0246 — first compile of build #10, App. B B10). DefaultItemExcludes
+         is consulted by every default glob, so one line keeps the whole
+         tests subtree (incl. any future tests/**/obj generated sources) out
+         of the app compilation; the test project globs its own directory
+         (App. B B11). Property evaluation precedes item evaluation, so an
+         in-body setting is honored by the SDK's globs. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**</DefaultItemExcludes>
+
     <!-- Version protocol: patch digit = build number. Bump ONLY when source
          changed; incremental no-op builds keep the version (so a stale exe
          is instantly detectable: binary version < current source version). -->
-    <VersionPrefix>0.0.9</VersionPrefix>
-    <FileVersion>0.0.9</FileVersion>
-    <InformationalVersion>0.0.9-build9-injectable-clock</InformationalVersion>
+    <VersionPrefix>0.0.11</VersionPrefix>
+    <FileVersion>0.0.11</FileVersion>
+    <InformationalVersion>0.0.11-build11-test-glob-exclusion</InformationalVersion>
   </PropertyGroup>
 
   <!-- Stamp the OutDir with a build-info.txt we can read as text to verify
