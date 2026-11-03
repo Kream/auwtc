@@ -1,16 +1,16 @@
 # ActuallyUsableWorldTimeClock2 (WorldTimeZoneClock)
 
-A minimal, actually-usable Windows tray world clock. Three cities (LAX / JFK / LHR),
+A minimal, actually-usable Windows tray world clock. Four cities (LAX / JFK / LHR / CHC),
 one always-visible tray icon, a compact borderless popup, and a working Exit menu.
 
 - **Runtime:** .NET 8, WPF, `net8.0-windows` (win-x64)
 - **Assembly:** `WorldTimeZoneClock`
-- **Version:** 0.0.13-build13-sizetocontent-popup (patch digit = build number; bump only on source change)
+- **Version:** 0.0.14-build14-roster-agnostic-tests (patch digit = build number; bump only on source change)
 
 ## Features
 - Tray icon (shell `NOTIFYICON_VERSION_3`) with left-click toggle popup showing
-  local times for Los Angeles, New York, London (tz database names
-  `America/Los_Angeles`, `America/New_York`, `Europe/London`).
+  local times for Los Angeles, New York, London, Christchurch (tz database names
+  `America/Los_Angeles`, `America/New_York`, `Europe/London`, `Pacific/Auckland`).
 - Popup: 180 DIP manual width × content-sized height (`SizeToContent="Height"`, build #13 —
   added cities render AND grow the popup; `UniformGrid Rows="3"` → vertical `StackPanel`),
   borderless, topmost, no-activate (`WS_EX_NOACTIVATE|WS_EX_TOOLWINDOW`),
@@ -29,7 +29,7 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
   (`GetLocalTimes(cities, instant)` → `ConvertTime(DateTimeOffset, tz)`) — the rows can never
   straddle a minute boundary. The clock is injectable (`Func<DateTimeOffset>`, default
   `DateTimeOffset.Now`), so tests drive the snapshot deterministically.
-- Tests: `tests/WorldTimeZoneClock.Tests` (xUnit) — probe-clock (exactly-one-read per open),
+- Tests: `tests/WorldTimeZoneClock.Tests` (xUnit, 9 cases — **roster-agnostic**: add cities freely; the documented set is asserted by name) — probe-clock (exactly-one-read per open),
   `:59.999`/`:00.001` boundary pins, fresh-snapshot-per-open, DST edges, `--:--` degradation.
   Run `dotnet test tests\WorldTimeZoneClock.Tests\WorldTimeZoneClock.Tests.csproj` (scope the
   test project directly — the `.slnx` format needs a .NET 9 SDK). The main `.csproj` excludes
