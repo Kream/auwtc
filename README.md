@@ -5,7 +5,7 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
 
 - **Runtime:** .NET 8, WPF, `net8.0-windows` (win-x64)
 - **Assembly:** `WorldTimeZoneClock`
-- **Version:** 0.0.8-build8-tpm-workarea (patch digit = build number; bump only on source change)
+- **Version:** 0.0.9-build9-injectable-clock (patch digit = build number; bump only on source change)
 
 ## Features
 - Tray icon (shell `NOTIFYICON_VERSION_3`) with left-click toggle popup showing
@@ -18,6 +18,9 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
   right-edge vertical taskbar).
 - Single instance (named mutex `Local\WorldTimeZoneClock`; second launch exits silently).
 - DPI-aware positioning (`HwndSource...TransformFromDevice` with `?? Matrix.Identity` guard).
+- Injectable clock (build #9): `CityTimeProvider` / `ClockViewModel` accept an optional
+  `Func<DateTimeOffset>` (default `DateTimeOffset.Now`), so tests can drive the per-city
+  snapshot reads deterministically — the minute-boundary race is controllable, not removed.
 - Crash logging: `DispatcherUnhandledException` + `AppDomain.UnhandledException` append
   full stacks to `crash.log` next to the exe (fallback `%TEMP%\WorldTimeZoneClock.crash.log`).
 - Per-build stamp: `build-info.txt` written next to the exe on every build

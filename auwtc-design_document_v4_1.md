@@ -1,8 +1,8 @@
 # Design Document: World Time Zone Clock (System Tray)
 
-> **Version:** 3.1
-> **Supersedes:** `auwtc-design_document_v3.md`
-> **What changed in this revision:** see Appendix A (Change Log) at the end of this document.
+> **Version:** 4.1
+> **Supersedes:** `auwtc-design_document_v4.md`
+> **What changed in this revision:** see Appendix A (Change Log) at the end of this document. The full revision history (v2 → v3 → v3.1 → v4) is preserved in Appendix A and in the git history of this repository.
 
 ## 1. Overview
 
@@ -65,13 +65,15 @@ The app is split into three loosely coupled layers:
   - `City` (City)
   - `Time` (string): formatted as `HH:mm` (e.g., `"17:13"`).
 - **`CityTimeProvider`** (service)
-  - `GetLocalTime(City city)` → `string` (24-hour time for that city at the moment of the call).
-  - Uses `TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById(city.TimeZoneId))`.
+  - Constructor: optional `Func<DateTimeOffset>? clock` — omitted/null = the real clock (`DateTimeOffset.Now`), so the production wiring in `App` is unchanged. An injected clock is read once per `GetLocalTime` call, which makes every per-city snapshot read (and any minute-boundary straddle across the three rows) deterministically drivable in tests (build #9, App. B B8).
+  - `GetLocalTime(City city)` → `string` (24-hour time for that city at the moment of the call; each call reads the clock once).
+  - Uses `TimeZoneInfo.ConvertTime(clock(), TimeZoneInfo.FindSystemTimeZoneById(city.TimeZoneId))` — the `DateTimeOffset` overload converts the reading's instant (via its offset) to the zone's wall clock; DST handling is unchanged.
   - Returns `HH:mm` in 24-hour format.
 
 ### 6.2 Business Logic
 
 - **`ClockViewModel`**
+  - Constructor: optional `Func<DateTimeOffset>? clock`, passed through to `CityTimeProvider` (omitted/null = the real clock; the `App` wiring is unchanged).
   - `ObservableCollection<City>` — the list of cities in order (LAX, JFK, LHR).
   - `ObservableCollection<CityTimeRow>` — computed rows from `CityTimeProvider`.
   - Exposes a `Refresh()` method that recomputes all rows (called when the popup opens).
@@ -107,7 +109,7 @@ The app is split into three loosely coupled layers:
   - Row 1: `LAX` + time
   - Row 2: `JFK` + time
   - Row 3: `LHR` + time
-- **Text:** City name left-aligned, time right-aligned, in a 12 pt font. Consolas 12 pt (monospaced) is recommended for clean column alignment; Segoe UI 12 pt is acceptable if the `Grid` columns use fixed widths.
+- **Text:** City name left-aligned, time right-aligned, in a 12 pt font (WPF `FontSize` is in device-independent pixels, so 12 pt = `FontSize 16`). Consolas 12 pt (monospaced) is recommended for clean column alignment; Segoe UI 12 pt is acceptable if the `Grid` columns use fixed widths.
 - **No border, no title bar, no close button.**
 - **Positioning:** Anchored above the tray icon — the popup's bottom edge is 8 pixels above the icon's top edge, horizontally centered on the icon, and clamped to the working area of the icon's monitor so it never overflows a screen edge (exact formulas in §9).
 
@@ -120,7 +122,7 @@ The app is split into three loosely coupled layers:
 
 - Use `Shell_NotifyIcon` (P/Invoke) from a hidden helper window.
 - **Icon rectangle:** `Shell_NotifyIconGetRect` returns the icon's screen rectangle.
-- **Anchor:** The popup is placed relative to that rectangle (see 7.2).
+- **Anchor:** The popup is placed relative to that rectangle (see §7.2).
 - **Icon lifecycle:** The icon is created on startup and destroyed when the app exits.
 
 ## 9. Positioning & Layout
@@ -158,8 +160,8 @@ The app is split into three loosely coupled layers:
 
 ## 11. Time Handling
 
-- **Source:** `DateTime.Now` (local machine time) converted per city.
-- **Conversion:** `TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById(city.TimeZoneId))`.
+- **Source:** the injected clock — a `Func<DateTimeOffset>`, default `DateTimeOffset.Now` (§6.1) — read once per `GetLocalTime` call; the default real clock is the local machine time.
+- **Conversion:** `TimeZoneInfo.ConvertTime(clock(), TimeZoneInfo.FindSystemTimeZoneById(city.TimeZoneId))` — the `DateTimeOffset` overload converts the reading's instant (via its offset) to the destination zone's wall clock.
 - **IANA IDs on Windows:** On .NET 6+ (and therefore .NET 8), `TimeZoneInfo.FindSystemTimeZoneById` natively accepts IANA IDs (e.g., `America/Los_Angeles`) — Windows has an ICU-based IANA↔Windows mapping built into the runtime. No manual mapping table is needed.
 - **DST:** Handled automatically by `TimeZoneInfo` for the snapshot date/time.
 - **Formatting:** `HH:mm` (24-hour, zero-padded, invariant culture so it does not depend on the user's locale).
@@ -177,13 +179,14 @@ The app is split into three loosely coupled layers:
 
 - **More cities:** Add a `City` entry (name, IANA ID, order); rows render automatically if the popup uses an `ItemsControl` bound to the `CityTimeRow` collection.
 - **Richer rows:** Extend `CityTimeRow` (e.g., date, day/night indicator, seconds) without changing the rendering pipeline.
-- **Live updates:** A `DispatcherTimer` could re-call `Refresh()` while the popup is open (out of scope for v3).
+- **Live updates:** A `DispatcherTimer` could re-call `Refresh()` while the popup is open (out of scope).
 - **Custom icon/skin:** Replace the built-in `SystemIcons.Application` bitmap with an embedded resource.
 - **Persistence:** None needed; city list is currently hard-coded in the data layer.
 
 ## 14. Glossary
 
 - **DST:** Daylight saving time.
+- **DateTimeOffset:** .NET structure representing a date/time instant plus its UTC offset; `TimeZoneInfo.ConvertTime(DateTimeOffset, TimeZoneInfo)` converts the instant to a destination zone's wall clock. The injectable clock (§6.1) is a `Func<DateTimeOffset>`.
 - **IANA time zone ID:** A portable time zone identifier from the Olson/tz database (e.g., `America/Los_Angeles`), accepted directly by `TimeZoneInfo.FindSystemTimeZoneById` on .NET 6+ (including .NET 8).
 - **TimeZoneInfo:** .NET class for timezone-aware time conversion.
 - **P/Invoke:** Platform Invocation Services for calling native Windows APIs (e.g., `Shell_NotifyIcon`, `Shell_NotifyIconGetRect`).
@@ -211,7 +214,7 @@ An LLM asked to create a new build must treat the increment as a deliberate, ver
 6. **Record the build.** Add an Appendix B row (`B<n+1>`) for the build; if documented behavior changed, update the affected design sections in the same revision.
 7. **Never decrement, reuse, or skip.** Build IDs are monotonic. An aborted or failed build does not give its number back — record it in Appendix B and let the next real build take the following number.
 
-## Appendix A — Change Log (v2 → v3.1)
+## Appendix A — Change Log (v2 → v4.1)
 
 | # | Section | Change | Reason |
 |---|---------|--------|--------|
@@ -228,14 +231,16 @@ An LLM asked to create a new build must treat the increment as a deliberate, ver
 | 11 | §8 | Documented `Shell_NotifyIconGetRect` as the source of the icon rectangle and icon lifecycle (create on startup, destroy on exit) | Implementation-relevant detail |
 | 12 | New §15 | Added "Build ID Incrementation": when a build ID increments (source change → bump, docs-only → no bump, one bump per build) and a step-by-step procedure an LLM must follow to increment it | The rule previously lived only as a one-line record in Appendix B6; it is now explicit, followable specification |
 | 13 | Header / App. A | Version 3.0 → 3.1; Supersedes → `auwtc-design_document_v3.md`; this change log extended | Document revision discipline; docs-only revision, so the build ID stays at #8 (per §15.1) |
+| 14 | Header / §7.2 / §8 / §13 / App. B | Version 3.1 → 4.0; Supersedes → `auwtc-design_document_v3_1.md`; cleaned edition: stripped obsolete/self-referential text — removed the `<!-- APPEND-POINT -->` marker and reworded the Appendix B append rule (future entries append at the bottom of the table), dropped the "for v3" qualifier in §13, added the WPF DIP rendering of "12 pt" (`FontSize 16`, matching `MainWindow.xaml`), and added the missing `§` sigils in the §7.2/§8 cross-references; the header now points to git history for superseded revisions | Extraneous, inaccurate, and obsolete content removed; normative specification unchanged; docs-only revision, so the build ID stays at #8 (per §15.1) |
+| 15 | Header / §6.1 / §6.2 / §11 / §14 / App. B | Version 4.0 → 4.1; Supersedes → `auwtc-design_document_v4.md`; documented build #9's injectable clock — optional `Func<DateTimeOffset>? clock` on `CityTimeProvider` and `ClockViewModel` (default `DateTimeOffset.Now`), `GetLocalTime` converts the injected instant via the `DateTimeOffset` overload of `ConvertTime`; the per-city read structure (one clock read per row, §10.3 snapshot per open) is deliberately preserved so the minute-boundary race becomes controllable in tests rather than removed; `DateTimeOffset` glossary entry added; App. B row B8 added and its heading extended to build #9 | Keeps the spec current with the source (§15.2 step 6); docs-only revision — the build-ID bump to #9 belongs to the source change, not this document |
 
 > Note: §5 names example IDEs only; the design is IDE-agnostic. Use whichever toolchain the team standardizes on.
 
-## Appendix B — Implementation Record (post-v3.0, through build #8)
+## Appendix B — Implementation Record (post-v3.0, through build #9)
 
 > Deliberate deltas and fixes made during construction against v3.0. The design
 > sections above remain the specification; where reality forced a change, it is
-> recorded here. Future entries go above the `<!-- APPEND-POINT -->` marker.
+> recorded here. Future entries are appended at the bottom of this table.
 
 | # | Area | Record |
 |---|------|--------|
@@ -246,5 +251,4 @@ An LLM asked to create a new build must treat the increment as a deliberate, ver
 | B5 | Context menu under taskbar | With a right-edge vertical taskbar the Exit menu rendered UNDER the taskbar. Z-band fixes (owner lifted to `HWND_TOPMOST`, foreground juggling) all failed — structural cause: `TrackPopupMenu`'s default work-area restriction applies only when the cursor is inside the work area, and a taskbar cursor is outside it; no horizontal alignment flag existed either. Fix (build #8): `TPM_WORKAREA` added to uFlags → menu clamped inside the work area. **Validated user-side (T1 pass).** `TPM_RIGHTALIGN` (0x0008) pre-staged in `TrayInterop` for a right-anchored variant if ever needed. |
 | B6 | Versioning | Per-build protocol: patch digit of `VersionPrefix` = build number, bumped only on source change; `InformationalVersion` carries a build tag (e.g. `0.0.8-build8-tpm-workarea`); `StampBuildInfo` target writes `build-info.txt` (version / built-UTC / config / rid) next to the exe after every build — machine-readable proof of what is compiled. |
 | B7 | Build #8 validation | Green compile (0W/0E, 4.59 s), dll 24,576 B; smoke round 3: T1 (Exit menu above right-edge taskbar + outside-click dismiss) PASS, T2 (Esc close → immediate re-open not eaten by the 300 ms grace) PASS — first Esc exercise. Menu ladder steps 2–3 not needed. |
-
-<!-- APPEND-POINT -->
+| B8 | Injectable clock (build #9) | `CityTimeProvider` and `ClockViewModel` accept an optional `Func<DateTimeOffset>? clock` (null/omitted → the real clock, `DateTimeOffset.Now`; production wiring in `App` unchanged — `new ClockViewModel()` still compiles and behaves identically). `GetLocalTime` reads the clock once per call and converts via `TimeZoneInfo.ConvertTime(DateTimeOffset, zone)` (instant semantics via the reading's offset; DST as before); `HH:mm`, invariant. Per-city reads deliberately preserved: an injected sequence clock reproduces the minute-boundary straddle deterministically; a constant clock pins the snapshot. Version strings → `0.0.9-build9-injectable-clock` (csproj re-read after edit: all three properties agree). Publish receipt verification pending — authored in a no-shell session; §15.2 step 5 handed to the maintainer. |

@@ -14,9 +14,9 @@
     <!-- Version protocol: patch digit = build number. Bump ONLY when source
          changed; incremental no-op builds keep the version (so a stale exe
          is instantly detectable: binary version < current source version). -->
-    <VersionPrefix>0.0.8</VersionPrefix>
-    <FileVersion>0.0.8</FileVersion>
-    <InformationalVersion>0.0.8-build8-tpm-workarea</InformationalVersion>
+    <VersionPrefix>0.0.9</VersionPrefix>
+    <FileVersion>0.0.9</FileVersion>
+    <InformationalVersion>0.0.9-build9-injectable-clock</InformationalVersion>
   </PropertyGroup>
 
   <!-- Stamp the OutDir with a build-info.txt we can read as text to verify
