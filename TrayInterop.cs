@@ -174,6 +174,12 @@ internal static class TrayInterop
     [DllImport("user32.dll", EntryPoint = "LoadIconW", SetLastError = true)]
     public static extern IntPtr LoadIcon(IntPtr hInstance, IntPtr lpIconName);
 
+    /// <summary>Destroys an HICON created via GDI+ (Bitmap.GetHicon, build #15). Never call
+    /// on LoadIcon-returned shared handles (IDI_APPLICATION is a shared resource).</summary>
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool DestroyIcon(IntPtr hIcon);
+
     public const int GWL_EXSTYLE = -20;
     public const long WS_EX_NOACTIVATE = 0x08000000L;
     public const long WS_EX_TOOLWINDOW = 0x00000080L;

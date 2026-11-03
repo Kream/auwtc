@@ -5,12 +5,16 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
 
 - **Runtime:** .NET 8, WPF, `net8.0-windows` (win-x64)
 - **Assembly:** `WorldTimeZoneClock`
-- **Version:** 0.0.14-build14-roster-agnostic-tests (patch digit = build number; bump only on source change)
+- **Version:** 0.0.15-build15-tray-icons (patch digit = build number; bump only on source change)
 
 ## Features
 - Tray icon (shell `NOTIFYICON_VERSION_3`) with left-click toggle popup showing
   local times for Los Angeles, New York, London, Christchurch (tz database names
   `America/Los_Angeles`, `America/New_York`, `Europe/London`, `Pacific/Auckland`).
+- Icons (build #15): tray icon = DPI-rung PNG set embedded in the assembly
+  (`assets/tray_{16,20,24,32,48,64}.png`, selected via `GetDpiForWindow`;
+  `IDI_APPLICATION` fallback if loading fails); `assets/installer.ico` → exe icon
+  (`<ApplicationIcon>`); `assets/installer_256.png` reserved for the MSIX change-set.
 - Popup: 180 DIP manual width × content-sized height (`SizeToContent="Height"`, build #13 —
   added cities render AND grow the popup; `UniformGrid Rows="3"` → vertical `StackPanel`),
   borderless, topmost, no-activate (`WS_EX_NOACTIVATE|WS_EX_TOOLWINDOW`),
@@ -48,6 +52,9 @@ dotnet build -c Debug -r win-x64
 ## Versioning protocol
 - `VersionPrefix` / `FileVersion` / `InformationalVersion` live in the `.csproj`.
 - Patch digit = internal build number; only bumped when source changes.
+- MSIX (planned, build #16): `Package.appxmanifest` carries a **four-part** version
+  `0.0.<build>.0` (Revision pinned at 0) mapped 1:1 onto the three-part build ID —
+  design doc §15.3 (decided 2026-11-03, provisional; the icon change-set consumed #15).
 - `build-info.txt` in the output folder is the machine-readable build stamp.
 - Check the exe via Explorer → Details, or:
   ```

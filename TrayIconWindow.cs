@@ -20,6 +20,12 @@ internal sealed class TrayIconWindow : IDisposable
     private NOTIFYICONDATA _nid;
     private bool _iconAdded;
 
+    /// <summary>Our tray HICON (GDI+-created PNG rung, or the shared IDI_APPLICATION fallback).</summary>
+    private IntPtr _hIcon = IntPtr.Zero;
+
+    /// <summary>True only when _hIcon was created by us (Bitmap.GetHicon) and must be DestroyIcon'd in Dispose; LoadIcon handles are shared and must NEVER be destroyed.</summary>
+    private bool _ownsIcon;
+
     /// <summary>Raised on left-click release on the icon (toggle trigger, §10.1/§10.2).</summary>
     public event Action? LeftClick;
 
@@ -43,19 +49,37 @@ internal sealed class TrayIconWindow : IDisposable
     }
 
     /// <summary>
-    /// Adds the tray icon. Returns false on failure (§12: caller shows a
-    /// message box and exits — the app is useless without the icon).
+    /// Adds the tray icon (§7.1 build #15: DPI-rung PNG from the embedded asset
+    /// set; IDI_APPLICATION stays as the §12 fallback). Returns false on
+    /// failure (§12: caller shows a message box and exits — the app is
+    /// useless without the icon).
     /// </summary>
     public bool CreateIcon()
     {
+        // §7.1 (v4.5): pick the PNG rung for THIS helper window's DPI — a
+        // physical-px decision (§9.1: tray metrics, never DIP). Unknown DPI
+        // (TryGetWindowDpi false ⇒ 0) resolves to the base 16-px rung inside
+        // TrayIconAssets.
+        _ = TryGetWindowDpi(_source!.Handle, out uint dpi); // 0 on failure → handled inside
+        if (TrayIconAssets.TryCreateIconForDpi(dpi, out _hIcon))
+        {
+            _ownsIcon = true; // GDI+-created: ours to DestroyIcon in Dispose
+        }
+        else
+        {
+            // §12 fallback: shared system icon (must NOT be destroyed).
+            _hIcon = LoadIcon(IntPtr.Zero, IDI_APPLICATION);
+            _ownsIcon = false;
+        }
+
         _nid = new NOTIFYICONDATA
         {
             cbSize = Marshal.SizeOf<NOTIFYICONDATA>(),
-            hWnd = _source!.Handle,
+            hWnd = _source.Handle,
             uID = IconId,
             uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP,
             uCallbackMessage = (uint)WM_TRAYICON,
-            hIcon = LoadIcon(IntPtr.Zero, IDI_APPLICATION), // same icon as SystemIcons.Application (§7.1)
+            hIcon = _hIcon,
             szTip = "World Time Zone Clock",
         };
 
@@ -190,6 +214,12 @@ internal sealed class TrayIconWindow : IDisposable
         {
             Shell_NotifyIcon(NIM_DELETE, ref _nid); // §8: destroy on exit
             _iconAdded = false;
+        }
+        if (_ownsIcon && _hIcon != IntPtr.Zero)
+        {
+            DestroyIcon(_hIcon); // build #15: our GDI+ HICON; never the LoadIcon shared fallback
+            _hIcon = IntPtr.Zero;
+            _ownsIcon = false;
         }
         _source?.RemoveHook(WndProc);
         _source = null; // window/HWND dies with the process

@@ -11,6 +11,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
+    <!-- Build #15 (§7.1): installer.ico as the exe's Win32 icon resource
+         (Explorer + future MSIX packaging reuse it). -->
+    <ApplicationIcon>assets\installer.ico</ApplicationIcon>
+
     <!-- This project's directory IS the repository root, so the SDK's default
          **/*.cs (and resource) globs would otherwise sweep the nested test
          project's sources into the APP and die on its xUnit references
@@ -31,10 +35,30 @@
     <!-- Version protocol: patch digit = build number. Bump ONLY when source
          changed; incremental no-op builds keep the version (so a stale exe
          is instantly detectable: binary version < current source version). -->
-    <VersionPrefix>0.0.14</VersionPrefix>
-    <FileVersion>0.0.14</FileVersion>
-    <InformationalVersion>0.0.14-build14-roster-agnostic-tests</InformationalVersion>
+    <VersionPrefix>0.0.15</VersionPrefix>
+    <FileVersion>0.0.15</FileVersion>
+    <InformationalVersion>0.0.15-build15-tray-icons</InformationalVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Build #15 (§7.1): the DPI-rung tray PNGs, embedded as assembly
+         resources so the single-file self-contained publish carries them
+         INSIDE the bundle (loose Content files would land outside it).
+         Loaded by TrayIconAssets via GetManifestResourceStream → GDI+ → HICON. -->
+    <EmbeddedResource Include="assets\tray_16.png" />
+    <EmbeddedResource Include="assets\tray_20.png" />
+    <EmbeddedResource Include="assets\tray_24.png" />
+    <EmbeddedResource Include="assets\tray_32.png" />
+    <EmbeddedResource Include="assets\tray_48.png" />
+    <EmbeddedResource Include="assets\tray_64.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Build #15: GDI+ (Bitmap → GetHicon) for the PNG→HICON conversion —
+         the main project's first NuGet dependency. Windows-only package,
+         consistent with net8.0-windows. -->
+    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+  </ItemGroup>
 
   <!-- Stamp the OutDir with a build-info.txt we can read as text to verify
        which binary is actually deployed (mtime tracking is unreliable here). -->
