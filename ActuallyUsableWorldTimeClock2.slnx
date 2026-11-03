@@ -1,4 +1,16 @@
 <Solution>
-  <Project Path="ActuallyUsableWorldTimeZoneClock2.csproj" />
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="ARM" />
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ActuallyUsableWorldTimeZoneClock2.csproj">
+    <Platform Solution="Release|x64" Project="x64" />
+  </Project>
   <Project Path="tests/WorldTimeZoneClock.Tests/WorldTimeZoneClock.Tests.csproj" />
+  <Project Path="Package\Package.wapproj" Type="c7167f0d-bc9f-4e6e-afe1-012c56b48db5">
+    <Deploy />
+  </Project>
 </Solution>

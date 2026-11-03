@@ -5,7 +5,7 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
 
 - **Runtime:** .NET 8, WPF, `net8.0-windows` (win-x64)
 - **Assembly:** `WorldTimeZoneClock`
-- **Version:** 0.0.15-build15-tray-icons (patch digit = build number; bump only on source change)
+- **Version:** 0.0.16-build16-msix-packaging (patch digit = build number; bump only on source change)
 
 ## Features
 - Tray icon (shell `NOTIFYICON_VERSION_3`) with left-click toggle popup showing
@@ -52,9 +52,12 @@ dotnet build -c Debug -r win-x64
 ## Versioning protocol
 - `VersionPrefix` / `FileVersion` / `InformationalVersion` live in the `.csproj`.
 - Patch digit = internal build number; only bumped when source changes.
-- MSIX (planned, build #16): `Package.appxmanifest` carries a **four-part** version
-  `0.0.<build>.0` (Revision pinned at 0) mapped 1:1 onto the three-part build ID —
-  design doc §15.3 (decided 2026-11-03, provisional; the icon change-set consumed #15).
+- MSIX (scaffolded, build #16): wapproj relocated INTO the repo (`Package\Package.wapproj`, sibling
+  of the main csproj; relative ..\ links to manifest + PNG). Repo solution `ActuallyUsableWorldTimeClock2.slnx`
+  now holds app + tests + Package. Manifest at `packaging\Package.appxmanifest`
+  (`Version="0.0.16.0"` per §15.3 — Revision pinned at 0, enforced by `AppxAutoIncrementPackageRevision=False`).
+  Publisher `CN=Kream` = self-signed cert subject. Signing certs (`.pfx`), `.cer`, `*.wapproj.user`,
+  and package bundles are gitignored.
 - `build-info.txt` in the output folder is the machine-readable build stamp.
 - Check the exe via Explorer → Details, or:
   ```

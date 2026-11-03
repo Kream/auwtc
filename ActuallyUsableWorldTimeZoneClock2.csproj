@@ -16,15 +16,15 @@
     <ApplicationIcon>assets\installer.ico</ApplicationIcon>
 
     <!-- This project's directory IS the repository root, so the SDK's default
-         **/*.cs (and resource) globs would otherwise sweep the nested test
-         project's sources into the APP and die on its xUnit references
-         (CS0246 — first compile of build #10, App. B B10). DefaultItemExcludes
-         is consulted by every default glob, so one line keeps the whole
-         tests subtree (incl. any future tests/**/obj generated sources) out
-         of the app compilation; the test project globs its own directory
-         (App. B B11). Property evaluation precedes item evaluation, so an
+         globs would otherwise sweep the nested projects' files into the APP
+         (tests/** → CS0246 on xUnit refs, first compile of build #10, App. B B10;
+         Package/** → the wizard's boilerplate PNGs would be swept in as WPF
+         Resource items by the **/*.png glob — build #16 relocation, App. B B16).
+         DefaultItemExcludes is consulted by every default glob, so one line keeps
+         both subtrees out of the app compilation; each nested project globs its
+         own directory. Property evaluation precedes item evaluation, so an
          in-body setting is honored by the SDK's globs. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);tests/**;Package/**</DefaultItemExcludes>
 
     <!-- Build #12 (§4/§14): Per-Monitor V2 DPI awareness, declared in app.manifest —
          embedded into the exe here (nothing is generated without this property).
@@ -35,9 +35,10 @@
     <!-- Version protocol: patch digit = build number. Bump ONLY when source
          changed; incremental no-op builds keep the version (so a stale exe
          is instantly detectable: binary version < current source version). -->
-    <VersionPrefix>0.0.15</VersionPrefix>
-    <FileVersion>0.0.15</FileVersion>
-    <InformationalVersion>0.0.15-build15-tray-icons</InformationalVersion>
+    <VersionPrefix>0.0.16</VersionPrefix>
+    <FileVersion>0.0.16</FileVersion>
+    <InformationalVersion>0.0.16-build16-msix-packaging</InformationalVersion>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -62,12 +63,8 @@
 
   <!-- Stamp the OutDir with a build-info.txt we can read as text to verify
        which binary is actually deployed (mtime tracking is unreliable here). -->
-  <Target Name="StampBuildInfo" AfterTargets="Build"
-          Condition="'$(IsCrossTargetingBuild)' != 'true'">
-    <WriteLinesToFile
-        File="$(OutDir)build-info.txt"
-        Lines="version=$(InformationalVersion);built=$([System.DateTime]::UtcNow.ToString('o')) config=$(Configuration) rid=$(RuntimeIdentifier)"
-        Overwrite="true" />
+  <Target Name="StampBuildInfo" AfterTargets="Build" Condition="'$(IsCrossTargetingBuild)' != 'true'">
+    <WriteLinesToFile File="$(OutDir)build-info.txt" Lines="version=$(InformationalVersion);built=$([System.DateTime]::UtcNow.ToString('o')) config=$(Configuration) rid=$(RuntimeIdentifier)" Overwrite="true" />
   </Target>
 
 </Project>

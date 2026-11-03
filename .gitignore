@@ -7,3 +7,24 @@ TestResults/
 
 # Logs (build.log, publish.log, crash.log)
 *.log
+
+# Visual Studio per-machine solution state — never commit
+.vs/
+
+# MSIX packaging (build #16): the signing certificate is a SECRET — never commit;
+# package bundles are generated output (VS emits them to bin\...\AppPackages/
+# by default — wildcard-ignore the artifacts at any depth). The .wapproj.user
+# is per-machine wizard state; the .cer is the generated public cert export;
+# Package.assets.cache is the wapproj's generated NuGet restore cache.
+*.pfx
+*.msix
+*.appx
+*.appxbundle
+*.msixbundle
+*.msixupload
+*.appxupload
+*.appxsym
+*.cer
+*.wapproj.user
+*.assets.cache
+AppPackages/
