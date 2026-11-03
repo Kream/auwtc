@@ -5,7 +5,7 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
 
 - **Runtime:** .NET 8, WPF, `net8.0-windows` (win-x64)
 - **Assembly:** `WorldTimeZoneClock`
-- **Version:** 0.0.11-build11-test-glob-exclusion (patch digit = build number; bump only on source change)
+- **Version:** 0.0.12-build12-dip-units-policy (patch digit = build number; bump only on source change)
 
 ## Features
 - Tray icon (shell `NOTIFYICON_VERSION_3`) with left-click toggle popup showing
@@ -17,7 +17,10 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
   inside the work area even when the cursor is on a taskbar strip, e.g. a
   right-edge vertical taskbar).
 - Single instance (named mutex `Local\WorldTimeZoneClock`; second launch exits silently).
-- DPI-aware positioning (`HwndSource...TransformFromDevice` with `?? Matrix.Identity` guard).
+- DPI (build #12): Per-Monitor V2 awareness declared in `app.manifest`; DIP is the canonical
+  unit, and the ONE px→DIP conversion (`TrayInterop.PxToDip` + `GetDpiForWindow`, the popup's
+  own window DPI) sits at the interop boundary — see the §9.1 units audit table in the design
+  doc. Cursor→menu and hook-point↔popup-rect paths stay physical px end-to-end.
 - Single-instant snapshot (build #10): `Refresh()` captures ONE instant (the injectable clock's
   single read per open, `CityTimeProvider.Now`) and converts every city from it
   (`GetLocalTimes(cities, instant)` → `ConvertTime(DateTimeOffset, tz)`) — the rows can never

@@ -132,6 +132,8 @@ internal sealed class TrayIconWindow : IDisposable
         SetWindowPos(_source.Handle, (IntPtr)HWND_TOPMOST, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         SetForegroundWindow(_source.Handle);
+        // §9.1 (v4.3): GetCursorPos and TrackPopupMenu both speak physical px —
+        // native↔native pass-through, NO DIP conversion on this path.
         GetCursorPos(out POINT p);
 
         IntPtr menu = CreatePopupMenu();

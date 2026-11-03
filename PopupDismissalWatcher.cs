@@ -36,7 +36,13 @@ internal sealed class PopupDismissalWatcher : IDisposable
     public void Start(Window popup, Action onDismiss)
     {
         IntPtr hwnd = new WindowInteropHelper(popup).Handle;
-        GetWindowRect(hwnd, out _popupRect); // physical pixels — same space as the hook's points
+        // §9.1 (v4.3): GetWindowRect and the hook's MSLLHOOKSTRUCT.pt are both
+        // PHYSICAL px in Win32 screen space — the containment compare is px↔px
+        // end-to-end and performs NO DIP conversion. Valid only while the process
+        // is per-monitor DPI aware (app.manifest, §14): hook points are always
+        // real screen px, whereas GetWindowRect in a system-DPI-aware process
+        // returns OS-virtualized values (the two would diverge).
+        GetWindowRect(hwnd, out _popupRect); // physical px
         _onDismiss = onDismiss;
 
         IntPtr hMod = Marshal.GetHINSTANCE(typeof(PopupDismissalWatcher).Module);

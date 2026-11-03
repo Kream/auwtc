@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Build #12 (§4/§14, design doc v4.3): declares Per-Monitor V2 DPI awareness.
+     Load-bearing for the units policy: TrayInterop.PxToDip converts shell physical
+     px using the POPUP WINDOW's own effective DPI (GetDpiForWindow), and WPF inverts
+     Window.Left/Top with that same per-window factor only when this process is
+     per-monitor aware — under system-DPI-awareness the OS virtualizes window
+     geometry while shell rects stay true px, and the two stop sharing a space.
+     WPF on .NET 8 does not reliably default to PMv2 (dotnet/wpf#859) — pin it here. -->
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="WorldTimeZoneClock.app"/>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <!-- dpiAwareness is honored on Win10 1703+ (PerMonitorV2) and 1607+ (PerMonitor);
+           dpiAware is the pre-1607 fallback and is ignored when dpiAwareness is present. -->
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+    </windowsSettings>
+  </application>
+</assembly>

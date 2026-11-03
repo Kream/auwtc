@@ -22,12 +22,18 @@
          in-body setting is honored by the SDK's globs. -->
     <DefaultItemExcludes>$(DefaultItemExcludes);tests/**</DefaultItemExcludes>
 
+    <!-- Build #12 (§4/§14): Per-Monitor V2 DPI awareness, declared in app.manifest —
+         embedded into the exe here (nothing is generated without this property).
+         WPF on .NET 8 does not reliably default to PMv2 (dotnet/wpf#859), and the
+         px↔DIP policy (§9.1) is correct only under per-monitor awareness. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
     <!-- Version protocol: patch digit = build number. Bump ONLY when source
          changed; incremental no-op builds keep the version (so a stale exe
          is instantly detectable: binary version < current source version). -->
-    <VersionPrefix>0.0.11</VersionPrefix>
-    <FileVersion>0.0.11</FileVersion>
-    <InformationalVersion>0.0.11-build11-test-glob-exclusion</InformationalVersion>
+    <VersionPrefix>0.0.12</VersionPrefix>
+    <FileVersion>0.0.12</FileVersion>
+    <InformationalVersion>0.0.12-build12-dip-units-policy</InformationalVersion>
   </PropertyGroup>
 
   <!-- Stamp the OutDir with a build-info.txt we can read as text to verify
