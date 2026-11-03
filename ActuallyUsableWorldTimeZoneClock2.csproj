@@ -31,9 +31,9 @@
     <!-- Version protocol: patch digit = build number. Bump ONLY when source
          changed; incremental no-op builds keep the version (so a stale exe
          is instantly detectable: binary version < current source version). -->
-    <VersionPrefix>0.0.12</VersionPrefix>
-    <FileVersion>0.0.12</FileVersion>
-    <InformationalVersion>0.0.12-build12-dip-units-policy</InformationalVersion>
+    <VersionPrefix>0.0.14</VersionPrefix>
+    <FileVersion>0.0.14</FileVersion>
+    <InformationalVersion>0.0.14-build14-roster-agnostic-tests</InformationalVersion>
   </PropertyGroup>
 
   <!-- Stamp the OutDir with a build-info.txt we can read as text to verify

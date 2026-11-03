@@ -5,14 +5,17 @@ one always-visible tray icon, a compact borderless popup, and a working Exit men
 
 - **Runtime:** .NET 8, WPF, `net8.0-windows` (win-x64)
 - **Assembly:** `WorldTimeZoneClock`
-- **Version:** 0.0.12-build12-dip-units-policy (patch digit = build number; bump only on source change)
+- **Version:** 0.0.13-build13-sizetocontent-popup (patch digit = build number; bump only on source change)
 
 ## Features
 - Tray icon (shell `NOTIFYICON_VERSION_3`) with left-click toggle popup showing
   local times for Los Angeles, New York, London (tz database names
   `America/Los_Angeles`, `America/New_York`, `Europe/London`).
-- Popup: 180×100, borderless, topmost, no-activate (`WS_EX_NOACTIVATE|WS_EX_TOOLWINDOW`),
-  icon-anchored with work-area clamping; auto-dismisses on outside click / focus loss / Esc.
+- Popup: 180 DIP manual width × content-sized height (`SizeToContent="Height"`, build #13 —
+  added cities render AND grow the popup; `UniformGrid Rows="3"` → vertical `StackPanel`),
+  borderless, topmost, no-activate (`WS_EX_NOACTIVATE|WS_EX_TOOLWINDOW`),
+  icon-anchored with work-area clamping using the MEASURED placement size
+  (never the nominal constants); auto-dismisses on outside click / Esc.
 - Right-click → Exit context menu (TrackPopupMenu with `TPM_WORKAREA` so it stays
   inside the work area even when the cursor is on a taskbar strip, e.g. a
   right-edge vertical taskbar).

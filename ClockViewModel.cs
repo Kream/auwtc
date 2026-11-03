@@ -16,6 +16,7 @@ public sealed class ClockViewModel
     new City("LAX", "America/Los_Angeles", 1),
     new City("JFK", "America/New_York", 2),
     new City("LHR", "Europe/London", 3),
+	new City("CHC", "Pacific/Auckland", 4),
   };
 
   /// <summary>Computed rows (one per city), rebuilt by Refresh().</summary>
